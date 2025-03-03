@@ -10,6 +10,7 @@ import 'src/models/css_style_declaration.dart';
 import 'web_common_platform_interface.dart';
 
 export 'src/widgets/video_widget.dart';
+export 'src/widgets/pointer_widget.dart';
 
 class WebCommon {
   static final instance = WebCommon();

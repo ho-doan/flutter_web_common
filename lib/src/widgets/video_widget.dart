@@ -295,22 +295,23 @@ class _VideoWidgetState extends State<VideoWidget> {
           Positioned.fill(
             child: Center(
               child: ValueListenableBuilder(
-                  valueListenable: _isPlaying,
-                  builder: (_, v, __) {
-                    return IconButton(
-                      icon: Icon(
-                        v ? Icons.pause : Icons.play_arrow,
-                      ),
-                      onPressed: () {
-                        if (v) {
-                          _controller.play();
-                        } else {
-                          _controller.pause();
-                        }
-                      },
-                      iconSize: 2.rem.toDouble(),
-                    );
-                  }),
+                valueListenable: _isPlaying,
+                builder: (_, v, __) {
+                  return IconButton(
+                    icon: Icon(
+                      v ? Icons.pause : Icons.play_arrow,
+                    ),
+                    onPressed: () {
+                      if (v) {
+                        _controller.play();
+                      } else {
+                        _controller.pause();
+                      }
+                    },
+                    iconSize: 2.rem.toDouble(),
+                  );
+                },
+              ),
             ),
           ),
         if (videoElement != null)

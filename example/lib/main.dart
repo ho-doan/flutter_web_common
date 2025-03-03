@@ -58,6 +58,9 @@ class _MyAppState extends MState<MyApp> {
           ),
         ),
       ),
+      builder: (context, child) {
+        return PointerWidget(child: child!);
+      },
     );
   }
 }
