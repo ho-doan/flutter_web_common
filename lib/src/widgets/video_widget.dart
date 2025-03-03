@@ -20,14 +20,17 @@ class VideoState extends ChangeNotifier {
   }
 
   final VoidCallback? _play, _pause;
+  final ValueChanged<num>? _changeCurrentTime;
 
   VideoState({
     required VoidCallback? play,
     required VoidCallback? pause,
+    required ValueChanged<num>? changeCurrentTime,
     required num currentTime,
   })  : _play = play,
         _pause = pause,
-        _currentTime = currentTime;
+        _currentTime = currentTime,
+        _changeCurrentTime = changeCurrentTime;
 
   void play() {
     if (_play == null) return;
@@ -35,6 +38,11 @@ class VideoState extends ChangeNotifier {
     _isPlaying = true;
 
     notifyListeners();
+  }
+
+  void changeCurrentTime(num v) {
+    currentTime = v;
+    _changeCurrentTime?.call(v);
   }
 
   void pause() {
@@ -128,6 +136,9 @@ class VideoState extends ChangeNotifier {
 abstract class VideoController {
   void play();
   void pause();
+
+  void currentTime(num v);
+
   void _initial(VideoState v);
 
   factory VideoController() => VideoControllerImpl();
@@ -148,6 +159,11 @@ class VideoControllerImpl implements VideoController {
   @override
   void _initial(v) {
     _videoState = v;
+  }
+
+  @override
+  void currentTime(num v) {
+    _videoState?.changeCurrentTime(v);
   }
 }
 
@@ -187,6 +203,10 @@ class _VideoWidgetState extends State<VideoWidget> {
     videoElement?.play();
   }
 
+  void changeCurrentTime(num v) {
+    videoElement?.currentTime = v;
+  }
+
   void pause() {
     videoElement?.pause();
   }
@@ -212,6 +232,7 @@ class _VideoWidgetState extends State<VideoWidget> {
         _videoState = VideoState(
           play: play,
           pause: pause,
+          changeCurrentTime: changeCurrentTime,
           currentTime: widget.currentTime,
         );
         _controller =
@@ -247,6 +268,7 @@ class _VideoWidgetState extends State<VideoWidget> {
           return;
         }
         log('==============registered');
+        videoElement.currentTime = widget.currentTime;
         _completer.complete(videoElement);
       });
 
@@ -299,11 +321,11 @@ class _VideoWidgetState extends State<VideoWidget> {
             child: ValueListenableBuilder(
               valueListenable: _currentTime,
               builder: (_, v, __) {
-                return LinearProgressIndicator(
-                  minHeight: 1.rem.toDouble(),
+                return Slider(
                   value: v / videoElement!.duration,
-                  color: Colors.red,
-                  backgroundColor: Colors.green,
+                  onChanged: (value) {
+                    _controller.currentTime(value * videoElement!.duration);
+                  },
                 );
               },
             ),

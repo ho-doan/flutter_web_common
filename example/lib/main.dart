@@ -47,8 +47,9 @@ class _MyAppState extends MState<MyApp> {
             itemBuilder: (_, itemIndex) {
               return const Center(
                 child: VideoWidget(
+                  currentTime: 10,
                   url:
-                      'https://aliseyedi01.github.io/Video-Player-TailwindCss/assets/Big-Buck-Bunny.mp4#t=20',
+                      'https://aliseyedi01.github.io/Video-Player-TailwindCss/assets/Big-Buck-Bunny.mp4',
                 ),
               );
             },
