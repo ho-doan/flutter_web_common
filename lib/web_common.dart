@@ -8,6 +8,7 @@ import 'dart:html' hide Point;
 
 import 'src/models/css_style_declaration.dart';
 import 'web_common_platform_interface.dart';
+import 'package:collection/collection.dart';
 
 export 'src/widgets/video_widget.dart';
 export 'src/widgets/pointer_widget.dart';
@@ -20,26 +21,74 @@ class WebCommon {
 }
 
 enum ResponsiveType {
+  /// 320px
+  xxs(320),
+
+  /// 480px
+  xsm(480),
+
   /// 640px
-  sm,
+  sm(640),
 
   /// 768px
-  md,
+  md(768),
 
   /// 1024px
-  lg,
+  lg(1024),
 
   /// 1280px
-  xl,
+  xl(1280),
 
   /// 1536px
-  $2xl,
+  $2xl(1536);
+
+  final int value;
+
+  const ResponsiveType(this.value);
+}
+
+extension ResponsiveTypeX on ResponsiveType {
+  bool hidden(ResponsiveType type) => value > type.value;
+
+  bool show(ResponsiveType type) => value <= type.value;
+
+  T when<T>({
+    T? xxs,
+    T? xsm,
+    T? sm,
+    T? md,
+    T? lg,
+    T? xl,
+    T? $2xl,
+    required T orElse,
+  }) {
+    switch (this) {
+      case ResponsiveType.xxs:
+        return xxs ?? orElse;
+      case ResponsiveType.xsm:
+        return xsm ?? xxs ?? orElse;
+      case ResponsiveType.sm:
+        return sm ?? xsm ?? xxs ?? orElse;
+      case ResponsiveType.md:
+        return md ?? sm ?? xsm ?? xxs ?? orElse;
+      case ResponsiveType.lg:
+        return lg ?? md ?? sm ?? xsm ?? xxs ?? orElse;
+      case ResponsiveType.xl:
+        return xl ?? lg ?? md ?? sm ?? xsm ?? xxs ?? orElse;
+      case ResponsiveType.$2xl:
+        return $2xl ?? xl ?? lg ?? md ?? sm ?? xsm ?? xxs ?? orElse;
+    }
+  }
 }
 
 extension on num {
   ResponsiveType get typeRes {
     ResponsiveType newType;
-    if (this < 640) {
+    if (this < 320) {
+      newType = ResponsiveType.xxs;
+    } else if (this < 480) {
+      newType = ResponsiveType.xsm;
+    } else if (this < 640) {
       newType = ResponsiveType.sm;
     } else if (this < 768) {
       newType = ResponsiveType.md;
@@ -66,8 +115,12 @@ class SizeCommon extends ValueNotifier<ResponsiveType> {
 }
 
 mixin WebCommonMixin {
-  static late final SizeCommon _sizeCommon;
-  static late double _px;
+  static final SizeCommon _sizeCommon =
+      SizeCommon((window.innerWidth ?? 0).typeRes);
+  static double get _px {
+    final s = _getCommon();
+    return double.parse(s.fontSize.replaceFirst('px', '')).toDouble();
+  }
 
   static final Completer _hasScriptLoaded = Completer<void>();
   static Future<void> _loadJS() async {
@@ -87,10 +140,7 @@ mixin WebCommonMixin {
 
   static Future<void> initial() async {
     log('initial WebCommonMixin');
-    _sizeCommon = SizeCommon((window.innerWidth ?? 0).typeRes);
     await _loadJS();
-    final s = _getCommon();
-    _px = double.parse(s.fontSize.replaceFirst('px', '')).toDouble();
     window.addEventListener('resize', (_) {
       _sizeCommon.size = Size(
         (window.innerWidth ?? 0).toDouble(),
@@ -101,7 +151,7 @@ mixin WebCommonMixin {
 }
 
 extension NumX on num {
-  num get rem => this * WebCommonMixin._px;
+  double get rem => this * WebCommonMixin._px;
 }
 
 @JS('web_common.getCommon')
@@ -129,5 +179,94 @@ abstract class MState<T extends StatefulWidget> extends State<T> {
   void dispose() {
     _utils.removeListener(_listen);
     super.dispose();
+  }
+}
+
+class ResponsiveWidget extends StatefulWidget {
+  const ResponsiveWidget({
+    super.key,
+    this.hidden,
+    required this.child,
+    this.elseWidget = const SizedBox.shrink(),
+  });
+
+  final ResponsiveType? hidden;
+  final Widget child;
+  final Widget elseWidget;
+
+  @override
+  State<ResponsiveWidget> createState() => _ResponsiveWidgetState();
+}
+
+class _ResponsiveWidgetState extends MState<ResponsiveWidget> {
+  @override
+  Widget build(BuildContext context) {
+    if (widget.hidden != null && !resType.hidden(widget.hidden!)) {
+      return widget.elseWidget;
+    }
+    return widget.child;
+  }
+}
+
+class ResponsiveListView extends StatefulWidget {
+  const ResponsiveListView({
+    super.key,
+    required this.children,
+    this.xxs,
+    this.xsm,
+    this.sm,
+    this.md,
+    this.lg,
+    this.xl,
+    this.$2xl,
+    this.controller,
+  });
+  final List<Widget> children;
+
+  final int? xxs, xsm, sm, md, lg, xl, $2xl;
+  final ScrollController? controller;
+
+  @override
+  State<ResponsiveListView> createState() => _ResponsiveListViewState();
+}
+
+class _ResponsiveListViewState extends MState<ResponsiveListView> {
+  final int orElse = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    final itemRows = resType.when(
+      $2xl: widget.$2xl,
+      lg: widget.lg,
+      md: widget.md,
+      sm: widget.sm,
+      xl: widget.xl,
+      xsm: widget.xsm,
+      xxs: widget.xxs,
+      orElse: orElse,
+    );
+    final children = widget.children.slices(itemRows).toList();
+    return ListView.builder(
+      controller: widget.controller,
+      itemCount: children.length,
+      itemBuilder: (_, i) {
+        final items = List.from(children[i]);
+        if (items.length < itemRows) {
+          items.add(const SizedBox.shrink());
+        }
+        return Row(
+          children: [
+            for (final item in items)
+              Expanded(
+                child: AnimatedContainer(
+                  key: ObjectKey(item),
+                  duration: const Duration(milliseconds: 500),
+                  child: item,
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 }

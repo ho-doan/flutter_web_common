@@ -35,32 +35,33 @@ class _PointerWidgetState extends State<PointerWidget> {
         children: [
           widget.child,
           ValueListenableBuilder(
-              valueListenable: _position,
-              builder: (_, position, __) {
-                return AnimatedPositioned(
-                  duration: const Duration(milliseconds: 100),
-                  top: position.dy,
-                  left: position.dx,
-                  child: ValueListenableBuilder(
-                    valueListenable: _position,
-                    builder: (_, v, __) {
-                      return IgnorePointer(
-                        child: ClipPath(
-                          clipper: DiamondClipper(),
-                          child: Container(
-                            width: 15,
-                            height: 15,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.green,
-                            ),
+            valueListenable: _position,
+            builder: (_, position, __) {
+              return AnimatedPositioned(
+                duration: const Duration(milliseconds: 100),
+                top: position.dy,
+                left: position.dx,
+                child: ValueListenableBuilder(
+                  valueListenable: _position,
+                  builder: (_, v, __) {
+                    return IgnorePointer(
+                      child: ClipPath(
+                        clipper: DiamondClipper(),
+                        child: Container(
+                          width: 15,
+                          height: 15,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.green,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                );
-              }),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
